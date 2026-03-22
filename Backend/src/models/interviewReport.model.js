@@ -74,15 +74,15 @@ const behavirolQuestionsSchema = new mongoose.Schema({
 
 
 const skillGapsSchema = new mongoose.Schema({
-skill : {
-    type: String,
-    required: [true, "Skill is required"]
-},
-severity:{
-    type:String,
-    enum: ["low", "medium", "high"],
-    required: [true, "Severity is required"]
-}
+    skill: {
+        type: String,
+        required: [true, "Skill is required"]
+    },
+    severity: {
+        type: String,
+        enum: ["low", "medium", "high"],
+        required: [true, "Severity is required"]
+    }
 }, {
     _id: false
 })
@@ -94,11 +94,11 @@ const preparationPlanSchema = new mongoose.Schema({
     },
     focus: {
         type: String,
-        required: [true,"Focus is requird"]
+        required: [true, "Focus is requird"]
     },
     tasks: [{
-        type:String,
-        required: [true,"Task is required"]
+        type: String,
+        required: [true, "Task is required"]
 
     }]
 })
@@ -111,6 +111,9 @@ const interviewReportSchema = new mongoose.Schema({
     resume: {
         type: String,
     },
+    selfDescrption:{
+        type:String
+    },
     matchScore: {
         type: Number,
         min: 0,
@@ -118,12 +121,13 @@ const interviewReportSchema = new mongoose.Schema({
     },
     technicalQuestions: [technicalQuestionsSchema],
     behavirolQuestions: [behavirolQuestionsSchema],
-    skilGaps: [skillGapsSchema]
+    skillGaps: [skillGapsSchema],
+    preparationPlan : [preparationPlanSchema]
 
 },
-{
-    timeStaps :true
-}
+    {
+        timeStamps: true
+    }
 )
 
 const interviewReportModel = mongoose.model("InterviewReport", interviewReportSchema);
