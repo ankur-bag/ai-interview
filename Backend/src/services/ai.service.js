@@ -55,7 +55,7 @@ Generate a complete JSON interview report with:
     {
       "question": "actual question",
       "intention": "what skill this tests",
-      "answer": "detailed answer"
+      "answer": " answer"
     }
   ],
   
