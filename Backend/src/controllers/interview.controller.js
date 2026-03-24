@@ -19,25 +19,26 @@ async function generateInterviewReportController(req, res) {
         jobDescription
     })
 
-    console.log("AI Response:", JSON.stringify(interviewReportByAi, null, 2))
+    try {
+        const interviewReport = await interviewReportModel.create({
+            user: req.user.id,
+            resume: resumeContent.text,
+            selfDescription,
+            jobDescription,
+            ...interviewReportByAi
+        })
 
-    const interviewReport = await interviewReportModel.create({
-        user: req.user.id,
-        resume: resumeContent.text,
-        selfDescription,
-        jobDescription,
-        matchScore: interviewReportByAi.matchScore || 0,
-        technicalQuestions: Array.isArray(interviewReportByAi.technicalQuestions) ? interviewReportByAi.technicalQuestions : [],
-        behavioralQuestions: Array.isArray(interviewReportByAi.behavioralQuestions) ? interviewReportByAi.behavioralQuestions : [],
-        skillGaps: Array.isArray(interviewReportByAi.skillGaps) ? interviewReportByAi.skillGaps : [],
-        preparationPlan: Array.isArray(interviewReportByAi.preparationPlan) ? interviewReportByAi.preparationPlan : [],
-        title: interviewReportByAi.title || ""
-    })
-
-    res.status(201).json({
-        message: "Interview report generated successfully.",
-        interviewReport
-    })
+        res.status(201).json({
+            message: "Interview report generated successfully.",
+            interviewReport
+        })
+    } catch (error) {
+        console.error("Validation error:", error.message)
+        res.status(400).json({
+            message: "Failed to save interview report",
+            error: error.message
+        })
+    }
 
 }
 

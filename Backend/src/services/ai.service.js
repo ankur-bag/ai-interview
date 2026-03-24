@@ -22,48 +22,131 @@ const interviewReportSchema = z.object({
     })).describe("Behavioral questions that can be asked in the interview along with their intention and how to answer them"),
     skillGaps: z.array(z.object({
         skill: z.string().describe("The skill which the candidate is lacking"),
-        severity: z.enum([ "low", "medium", "high" ]).describe("The severity of this skill gap, i.e. how important is this skill for the job and how much it can impact the candidate's chances")
+        severity: z.enum(["low", "medium", "high"]).describe("The severity of this skill gap, i.e. how important is this skill for the job and how much it can impact the candidate's chances")
     })).describe("List of skill gaps in the candidate's profile along with their severity"),
     preparationPlan: z.array(z.object({
         day: z.number().describe("The day number in the preparation plan, starting from 1"),
         focus: z.string().describe("The main focus of this day in the preparation plan, e.g. data structures, system design, mock interviews etc."),
         tasks: z.array(z.string()).describe("List of tasks to be done on this day to follow the preparation plan, e.g. read a specific book or article, solve a set of problems, watch a video etc.")
-    })).describe("A day-wise preparation plan for the candidate to follow in order to prepare for the interview effectively")
+    })).describe("A day-wise preparation plan for the candidate to follow in order to prepare for the interview effectively"),
+    title: z.string().describe("The title of the job for which the interview report is generated"),
 })
 
 async function generateInterviewReport({ resume, selfDescription, jobDescription }) {
 
 
-    const prompt = `You are an expert interview coach. Analyze this candidate and generate a comprehensive interview report.
+    const prompt = `You are an expert technical interviewer and career coach.
 
-Candidate Resume:
+CRITICAL INSTRUCTION: Return ONLY valid JSON with ACTUAL VALUES, not key names.
+
+WRONG FORMAT (DO NOT RETURN THIS):
+{"technicalQuestions": ["question", "intention", "answer"]}
+
+CORRECT FORMAT (RETURN THIS):
+{"technicalQuestions": [{"question": "What is X?", "intention": "To test Y", "answer": "The answer is..."}]}
+
+Generate a complete JSON interview report with:
+
+{
+  "title": "string - job title",
+  "matchScore": number (0-100),
+  
+  "technicalQuestions": [
+    {
+      "question": "actual question",
+      "intention": "what skill this tests",
+      "answer": "detailed answer"
+    }
+  ],
+  
+  "behavioralQuestions": [
+    {
+      "question": "tell me about...",
+      "intention": "what this evaluates",
+      "answer": "STAR format answer"
+    }
+  ],
+  
+  "skillGaps": [
+    {
+      "skill": "skill name",
+      "severity": "low|medium|high"
+    }
+  ],
+  
+  "preparationPlan": [
+    {
+      "day": number,
+      "focus": "what to learn",
+      "tasks": ["task1", "task2"]
+    }
+  ]
+}
+
+REQUIREMENTS:
+- At least 5 technical questions with full Q&A
+- At least 5 behavioral questions with full Q&A  
+- At least 3 skill gaps
+- At least 7 days of planning with tasks
+
+Resume:
 ${resume}
-
-Candidate Self Description:
-${selfDescription}
 
 Job Description:
 ${jobDescription}
 
-Generate a JSON response with:
-1. matchScore: 0-100 rating of candidate fit
-2. technicalQuestions: Array of 5-7 technical interview questions with question, intention, and answer
-3. behavioralQuestions: Array of 4-5 behavioral questions with question, intention, and answer
-4. skillGaps: Array of missing skills with skill name and severity (low/medium/high)
-5. preparationPlan: Array of 7 days with day number, focus topic, and list of tasks
+Self Description:
+${selfDescription}
+`;
 
-Ensure each field is populated with realistic, specific content.`
 
     const response = await ai.models.generateContent({
-        model: "gemini-2.0-flash",
+        model: "gemini-2.5-flash",
         contents: prompt,
         config: {
-            responseMimeType: "application/json",
-            responseSchema: zodToJsonSchema(interviewReportSchema),
+            temperature: 0.7,
+            responseMimeType: "application/json"
         }
     })
 
-    return JSON.parse(response.text)
+    const rawText = response.candidates[0].content.parts[0].text
+    let parsedResponse = JSON.parse(rawText)
+    
+    // Reconstruct objects from flattened arrays if needed
+    const reconstructArray = (arr, objectKeys) => {
+        if (!Array.isArray(arr) || arr.length === 0) return []
+        
+        // If first item is a string (flattened), reconstruct
+        if (typeof arr[0] === 'string' && objectKeys.includes(arr[0])) {
+            const result = []
+            for (let i = 0; i < arr.length; i += objectKeys.length) {
+                const obj = {}
+                objectKeys.forEach((key, idx) => {
+                    obj[key] = arr[i + idx] || ""
+                })
+                result.push(obj)
+            }
+            return result
+        }
+        return arr
+    }
+    
+    const fixedResponse = {
+        title: parsedResponse.title || "Interview Report",
+        matchScore: typeof parsedResponse.matchScore === 'number' ? parsedResponse.matchScore : 0,
+        technicalQuestions: reconstructArray(parsedResponse.technicalQuestions, ["question", "intention", "answer"]),
+        behavioralQuestions: reconstructArray(parsedResponse.behavioralQuestions, ["question", "intention", "answer"]),
+        skillGaps: reconstructArray(parsedResponse.skillGaps, ["skill", "severity"]),
+        preparationPlan: reconstructArray(parsedResponse.preparationPlan, ["day", "focus", "tasks"])
+    }
+    
+    // Filter out empty entries
+    fixedResponse.technicalQuestions = fixedResponse.technicalQuestions.filter(q => q.question && q.question.length > 1)
+    fixedResponse.behavioralQuestions = fixedResponse.behavioralQuestions.filter(q => q.question && q.question.length > 1)
+    fixedResponse.skillGaps = fixedResponse.skillGaps.filter(s => s.skill && s.skill.length > 1)
+    fixedResponse.preparationPlan = fixedResponse.preparationPlan.filter(p => p.day && typeof p.day === 'number')
+    
+    return fixedResponse
 
 
 }
