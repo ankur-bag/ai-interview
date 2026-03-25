@@ -1,66 +1,85 @@
 import React, { useState } from 'react'
+import { motion } from 'framer-motion'
 import '../auth.form.scss'
 import { useNavigate, Link } from 'react-router'
 import { useAuth } from '../hooks/useAuth'
+
 const Register = () => {
-
-
     const { loading, handleRegister } = useAuth()
-
     const navigate = useNavigate()
     const [username, setUsername] = useState("")
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
+
     const handleSubmit = async (e) => {
         e.preventDefault()
-        await handleRegister({username,email,password})
-        navigate("/")
+        await handleRegister({ username, email, password })
+        navigate("/interview-prep")
     }
 
-    if(loading)
-    {
-        return (<main>Loading.....</main>)
-    }
+    // Loading state is handled inside the form for smoother transition
 
-    const handle = (e) => {
-        e.preventDefault()
-    }
     return (
-        <div>
-            <main>
-                <div className='form-container'>
-                    <h1>Register</h1>
-                    <form>
-
-                        <div className="input-group">
-                            <label htmlFor='username'>Username</label>
-                            <input
-                                onChange={(e) => { setUsername(e.target.value) }}
-                                type="username" id="username" name='username' placeholder='Enter username' />
-                        </div>
-                        <div className="input-group">
-                            <label htmlFor='email'>Email</label>
-                            <input
-                                onChange={(e) => { setEmail(e.target.value) }}
-                                type="email" id="email" name='email' placeholder='Enter email' />
-                        </div>
-                        <div className="input-group">
-                            <label htmlFor='email'>Password</label>
-                            <input
-                                onChange={(e) => { setPassword(e.target.value) }}
-                                type="email" id="email" name='email' placeholder='Enter password' />
-                        </div>
-
-                        <button className='button primary-button ' onClick={handleSubmit}>Register</button>
-
-
-
-                    </form>
-
-                    <p>Already have an account? Please <Link to={"/login"}>Login</Link></p>
+        <main className='auth-page'>
+            <div className='mesh-bg'></div>
+            <motion.div 
+                className='form-container glass-card'
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            >
+                <div className='auth-header'>
+                    <h1 className='home-title'>Create <span className='highlight'>Account</span></h1>
+                    <p className='home-subtitle'>Begin your journey towards professional excellence.</p>
                 </div>
-            </main>
-        </div>
+                <form onSubmit={handleSubmit} className='auth-form'>
+                    <div className="input-group">
+                        <label htmlFor='username'>Full Name</label>
+                        <input
+                            onChange={(e) => setUsername(e.target.value)}
+                            type="text"
+                            id="username"
+                            name='username'
+                            placeholder='John Doe'
+                            value={username}
+                            required
+                        />
+                    </div>
+                    <div className="input-group">
+                        <label htmlFor='email'>Email Address</label>
+                        <input
+                            onChange={(e) => setEmail(e.target.value)}
+                            type="email"
+                            id="email"
+                            name='email'
+                            placeholder='name@company.com'
+                            value={email}
+                            required
+                        />
+                    </div>
+                    <div className="input-group">
+                        <label htmlFor='password'>Password</label>
+                        <input
+                            onChange={(e) => setPassword(e.target.value)}
+                            type="password"
+                            id="password"
+                            name='password'
+                            placeholder='••••••••'
+                            value={password}
+                            required
+                        />
+                    </div>
+
+                    <button className='button primary-button glow' type='submit' disabled={loading}>
+                       {loading ? 'Creating Account...' : 'Create Account'}
+                    </button>
+                </form>
+
+                <p className='auth-footer'>
+                    Already have an account? <Link to="/login" className='highlight'>Login</Link>
+                </p>
+            </motion.div>
+        </main>
     )
 }
 

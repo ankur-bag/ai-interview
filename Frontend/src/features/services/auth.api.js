@@ -43,13 +43,12 @@ export async function logout() {
 }
 
 export async function getMe() {
-    try {pi.get("/api/auth/get-me")
-
+    try {
+        const response = await api.get("/api/auth/get-me")
         return response.data
 
     } catch (err) {
         console.error("GetMe error:", err.message)
         return { user: null }
-        console.log(err)
     }
 }

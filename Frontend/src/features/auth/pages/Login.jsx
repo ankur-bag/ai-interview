@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
 import '../auth.form.scss'
-import { Navigate, Link } from 'react-router'
+import { Link } from 'react-router'
 import { useAuth } from '../hooks/useAuth'
 import { useNavigate } from 'react-router'
+
 const Login = () => {
     const { loading, handleLogin } = useAuth()
     const navigate = useNavigate()
@@ -12,47 +13,59 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault()
         await handleLogin({ email, password })
-        navigate('/')
+        navigate('/interview-prep')
     }
 
-    const handle = (e) => {
-        e.preventDefault()
-    }
-
-
-    if (loading) {
-        return (
-            <main><h1>Loading....</h1></main>
-        )
-    }
+    // Loading state is handled inside the form for smoother transition
 
     return (
-        <main>
-            <div className='form-container'>
-                <h1>Login</h1>
-                <form onSubmit={handleSubmit}    >
-
+        <main className='auth-page'>
+            <div className='mesh-bg'></div>
+            <motion.div 
+                className='form-container glass-card'
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            >
+                <div className='auth-header'>
+                    <h1 className='home-title'>Welcome <span className='highlight'>Back</span></h1>
+                    <p className='home-subtitle'>Continue your journey to career mastery.</p>
+                </div>
+                <form onSubmit={handleSubmit} className='auth-form'>
                     <div className="input-group">
-                        <label htmlFor='email'>Email</label>
+                        <label htmlFor='email'>Email Address</label>
                         <input
-                            onChange={(e) => { setEmail(e.target.value) }}
-                            type="email" id="email" name='email' placeholder='Enter email' />
+                            onChange={(e) => setEmail(e.target.value)}
+                            type="email"
+                            id="email"
+                            name='email'
+                            placeholder='name@company.com'
+                            value={email}
+                            required
+                        />
                     </div>
                     <div className="input-group">
-                        <label htmlFor='email'>Password</label>
+                        <label htmlFor='password'>Password</label>
                         <input
-                            onChange={(e) => { setPassword(e.target.value) }}
-                            type="email" id="email" name='email' placeholder='Enter password' />
+                            onChange={(e) => setPassword(e.target.value)}
+                            type="password"
+                            id="password"
+                            name='password'
+                            placeholder='••••••••'
+                            value={password}
+                            required
+                        />
                     </div>
 
-                    <button className='button primary-button ' onClick={handleSubmit}>Login</button>
-
-
-
+                    <button className='button primary-button glow' type='submit' disabled={loading}>
+                       {loading ? 'Authenticating...' : 'Sign In'}
+                    </button>
                 </form>
-                <p>Don't have an account? Please <Link to={"/register"}>Register</Link></p>
 
-            </div>
+                <p className='auth-footer'>
+                    Don't have an account? <Link to="/register" className='highlight'>Register</Link>
+                </p>
+            </motion.div>
         </main>
     )
 }
