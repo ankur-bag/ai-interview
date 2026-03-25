@@ -9,6 +9,7 @@ const APIFY_API_KEY = process.env.APIFY_API_KEY
  * Extract skills from selfDescription using Gemini and generate a job search query
  */
 async function extractSkillsAndQuery(selfDescription) {
+    console.log(`[Jobs] Extracting skills from selfDescription (length: ${selfDescription.length})`)
     const prompt = `Analyze this candidate's self description and extract key information.
 
 Self Description:
@@ -20,21 +21,26 @@ Return a JSON object with:
 
 Return ONLY the JSON object, no other text.`
 
-    const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: prompt,
-        config: {
-            responseMimeType: "application/json",
-        }
-    })
-
-    const text = response.candidates[0].content.parts[0].text
     try {
-        return JSON.parse(text)
-    } catch {
-        // Fallback: try to clean markdown code blocks
-        const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
-        return JSON.parse(cleaned)
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+            }
+        })
+
+        const text = response.candidates[0].content.parts[0].text
+        const data = JSON.parse(text)
+        console.log(`[Jobs] Extracted Query: "${data.searchQuery}", Skills: [${data.skills?.join(', ')}]`)
+        return data
+    } catch (err) {
+        console.error('[Jobs] Gemini extraction failed:', err.message)
+        // Fallback query if AI fails
+        return { 
+            skills: ['Full Stack'], 
+            searchQuery: selfDescription.split(' ').slice(0, 3).join(' ') || 'Software Engineer' 
+        }
     }
 }
 
@@ -49,21 +55,25 @@ async function fetchJobsFromApify(searchQuery, location = 'India') {
         position: searchQuery,
         country: "IN",
         location: location,
-        maxItems: 15,
+        maxItems: 12,
         parseCompanyDetails: false,
         saveOnlyUniqueItems: true,
         followApplyRedirects: false,
     }
 
+    console.log(`[Jobs] Requesting Apify Indeed Scraper for queries: "${searchQuery}" in "${location}"`)
     try {
         const response = await axios.post(url, input, {
             headers: { 'Content-Type': 'application/json' },
-            timeout: 120000 // 2 minute timeout for scraping
+            timeout: 60000 // 1 minute timeout
         })
 
         if (!response.data || !Array.isArray(response.data)) {
+            console.log('[Jobs] Apify returned no items.')
             return []
         }
+
+        console.log(`[Jobs] Apify found ${response.data.length} raw items.`)
 
         // Normalize Apify response to our schema
         return response.data.map(job => ({
@@ -75,8 +85,8 @@ async function fetchJobsFromApify(searchQuery, location = 'India') {
             matchScore: 0
         }))
     } catch (error) {
-        console.error('Apify API error:', error.message)
-        throw new Error('Failed to fetch jobs from Apify. Please try again later.')
+        console.error('[Jobs] Apify API error:', error.response?.data || error.message)
+        return [] // Return empty list rather than crashing
     }
 }
 
@@ -93,14 +103,12 @@ function scoreJobs(skills, jobs) {
 
         let matchCount = 0
         normalizedSkills.forEach(skill => {
-            // Check for exact word or partial match (e.g. "react" matches "reactjs")
             if (jobText.includes(skill)) {
                 matchCount++
             }
         })
 
         const matchScore = Math.min(100, Math.round((matchCount / normalizedSkills.length) * 100))
-
         return { ...job, matchScore }
     })
 }
@@ -109,22 +117,18 @@ function scoreJobs(skills, jobs) {
  * Check MongoDB cache or fetch fresh results
  */
 async function getCachedOrFetchJobs(searchQuery, location = 'India') {
-    // Check cache first
     const cached = await JobSuggestion.findOne({
         searchQuery: searchQuery.toLowerCase(),
         location: location.toLowerCase()
     })
 
     if (cached) {
-        console.log(`[Jobs] Cache hit for "${searchQuery}" in "${location}"`)
+        console.log(`[Jobs] Cache hit for "${searchQuery}"`)
         return cached.jobs
     }
 
-    // Fetch from Apify
-    console.log(`[Jobs] Cache miss — fetching from Apify for "${searchQuery}" in "${location}"`)
     const jobs = await fetchJobsFromApify(searchQuery, location)
 
-    // Cache results if we got any
     if (jobs.length > 0) {
         await JobSuggestion.create({
             searchQuery: searchQuery.toLowerCase(),
@@ -140,30 +144,35 @@ async function getCachedOrFetchJobs(searchQuery, location = 'India') {
  * Main function: suggest jobs based on selfDescription
  */
 async function suggestJobs(selfDescription) {
-    // Step 1: Extract skills and generate search query
-    const { skills, searchQuery } = await extractSkillsAndQuery(selfDescription)
+    try {
+        const { skills, searchQuery } = await extractSkillsAndQuery(selfDescription)
 
-    if (!searchQuery) {
-        throw new Error('Could not determine job search query from your profile')
-    }
+        if (!searchQuery) {
+            console.warn('[Jobs] No searchQuery extracted.')
+            return { searchQuery: '', skills: [], jobs: [] }
+        }
 
-    // Step 2: Fetch jobs (cached or fresh)
-    const rawJobs = await getCachedOrFetchJobs(searchQuery, 'India')
+        const rawJobs = await getCachedOrFetchJobs(searchQuery, 'India')
 
-    if (!rawJobs || rawJobs.length === 0) {
-        return { searchQuery, skills, jobs: [] }
-    }
+        if (!rawJobs || rawJobs.length === 0) {
+            console.log('[Jobs] No jobs found for query.')
+            return { searchQuery, skills, jobs: [] }
+        }
 
-    // Step 3: Score and sort by matchScore
-    const scoredJobs = scoreJobs(skills, rawJobs)
-    const topJobs = scoredJobs
-        .sort((a, b) => b.matchScore - a.matchScore)
-        .slice(0, 5)
+        const scoredJobs = scoreJobs(skills, rawJobs)
+        const topJobs = scoredJobs
+            .sort((a, b) => b.matchScore - a.matchScore)
+            .slice(0, 6)
 
-    return {
-        searchQuery,
-        skills,
-        jobs: topJobs
+        console.log(`[Jobs] Returning ${topJobs.length} scored jobs.`)
+        return {
+            searchQuery,
+            skills,
+            jobs: topJobs
+        }
+    } catch (err) {
+        console.error('[Jobs] suggestJobs main error:', err.message)
+        return { searchQuery: 'Error', skills: [], jobs: [] }
     }
 }
 
