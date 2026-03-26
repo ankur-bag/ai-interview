@@ -5,9 +5,24 @@ const app = express()
 
 app.use(express.json())
 app.use(cookieParser())
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "https://intervue-yzrl.onrender.com",
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
 app.use(cors({
-    origin: "http://localhost:5173",
-    credentials: true
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true
 }))
 
 /*require all the routes here*/

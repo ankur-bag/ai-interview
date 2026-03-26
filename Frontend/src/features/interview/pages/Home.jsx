@@ -24,6 +24,9 @@ import {
 import ReactMarkdown from 'react-markdown'
 import '../style/home.scss'
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+
 const Typewriter = ({ text, delay = 30 }) => {
     const [currentText, setCurrentText] = useState('')
     const [currentIndex, setCurrentIndex] = useState(0)
@@ -64,7 +67,7 @@ const Home = () => {
     useEffect(() => {
         const fetchLatestReport = async () => {
             try {
-                const response = await fetch('http://localhost:3000/api/interview/latest-report', {
+                const response = await fetch(`${API_URL}/api/interview/latest-report`, {
                     method: 'GET',
                     credentials: 'include',
                 })
@@ -119,7 +122,7 @@ const Home = () => {
             formData.append('selfDescription', selfDescription)
             if (resume) formData.append('resume', resume)
 
-            const response = await fetch('http://localhost:3000/api/interview/generate-report', {
+            const response = await fetch(`${API_URL}/api/interview/generate-report`, {
                 method: 'POST',
                 credentials: 'include',
                 body: formData
@@ -148,7 +151,7 @@ const Home = () => {
     const fetchSuggestions = async (profile) => {
         setJobsLoading(true)
         try {
-            const response = await fetch('http://localhost:3000/api/jobs/suggest', {
+            const response = await fetch(`${API_URL}/api/jobs/suggest`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -293,7 +296,7 @@ const Home = () => {
                                     </div>
                                     <button 
                                         className='button primary-button download-btn glow' 
-                                        onClick={() => window.open(`http://localhost:3000/api/interview/download-report/${analysisData._id || analysisData.id}`, '_blank')}
+                                        onClick={() => window.open(`${API_URL}/api/interview/download-report/${analysisData._id || analysisData.id}`, '_blank')}
                                     >
                                         <FileText size={18} />
                                         <span>Download Full PDF Report</span>

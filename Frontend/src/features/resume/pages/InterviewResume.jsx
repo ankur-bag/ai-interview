@@ -17,6 +17,8 @@ import {
 } from 'lucide-react'
 import '../styles/interview.scss'
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 const InterviewResume = () => {
     const location = useLocation()
     const navigate = useNavigate()
@@ -61,7 +63,7 @@ const InterviewResume = () => {
         setLoading(true)
         setError(null)
         try {
-            const response = await fetch('http://localhost:3000/api/interview/generate-resume-html', {
+            const response = await fetch(`${API_URL}/api/interview/generate-resume-html`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -85,7 +87,7 @@ const InterviewResume = () => {
         setDownloading(true)
         setError(null)
         try {
-            const response = await fetch('http://localhost:3000/api/interview/generate-ats-resume', {
+            const response = await fetch(`${API_URL}/api/interview/generate-ats-resume`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',

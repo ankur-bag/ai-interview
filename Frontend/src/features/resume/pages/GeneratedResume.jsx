@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import '../styles/resume.scss'
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 const GeneratedResume = () => {
     const location = useLocation()
     const navigate = useNavigate()
@@ -30,7 +32,7 @@ const GeneratedResume = () => {
                     formData.append('resume', resumeData)
                 }
 
-                const response = await fetch('http://localhost:3000/api/interview', {
+                const response = await fetch(`${API_URL}/api/interview`, {
                     method: 'POST',
                     credentials: 'include',
                     body: formData
