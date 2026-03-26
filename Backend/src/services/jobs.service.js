@@ -147,7 +147,7 @@ async function getCachedOrFetchJobs(searchQuery, location = 'India') {
     const cached = await JobSuggestion.findOne({
         searchQuery: searchQuery.toLowerCase(),
         location: location.toLowerCase()
-    })
+    }).lean()
 
     if (cached) {
         console.log(`[Jobs] Cache hit for "${searchQuery}"`)

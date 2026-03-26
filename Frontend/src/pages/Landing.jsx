@@ -6,6 +6,7 @@ import {
     Zap, 
     Target, 
     ChevronRight,
+    LogOut,
     ArrowUpRight,
     Layout,
     Briefcase,
@@ -77,7 +78,7 @@ const CountUp = ({ target, duration = 2000, suffix = '' }) => {
 
 const Landing = () => {
     const navigate = useNavigate()
-    const { user } = useAuth()
+    const { user, handleLogout } = useAuth()
 
     const containerVariants = {
         hidden: { opacity: 0 },
@@ -153,12 +154,24 @@ const Landing = () => {
                     </div>
                     <div className='nav-actions'>
                         {user ? (
-                            <button 
-                                className='button primary-button nav-btn'
-                                onClick={() => navigate('/interview-prep')}
-                            >
-                                Dashboard <ChevronRight size={16} />
-                            </button>
+                            <>
+                                <button 
+                                    className='button primary-button nav-btn'
+                                    onClick={() => navigate('/interview-prep')}
+                                >
+                                    Dashboard <ChevronRight size={16} />
+                                </button>
+                                <button 
+                                    className='button ghost-btn logout-btn'
+                                    onClick={async () => {
+                                        await handleLogout()
+                                        navigate('/')
+                                    }}
+                                >
+                                    <LogOut size={16} />
+                                    Logout
+                                </button>
+                            </>
                         ) : (
                             <>
                                 <button 
@@ -188,7 +201,7 @@ const Landing = () => {
                 >
                     <motion.div className='pre-title' variants={itemVariants}>
                         <Sparkles size={16} />
-                        <span>Powered by Gemini AI</span>
+                        <span>Powered by GenAI</span>
                     </motion.div>
 
                     <motion.h1 className='hero-title-v3' variants={itemVariants}>
