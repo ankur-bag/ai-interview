@@ -1,4 +1,4 @@
-# IntervUe — AI-Powered Interview Preparation & Career Pipeline
+# IntervUe — GenAI-Powered Interview Preparation & Career Pipeline
 
 IntervUe is a modern, full-stack application designed to help job seekers prepare for interviews through AI-powered simulations, resume generation, and job suggestions. Built with a powerful Node.js backend and a sleek React frontend, it streamlines the entire career pipeline from preparation to application.
 
