@@ -28,23 +28,28 @@ const TypingText = ({ texts, speed = 80, pause = 2000 }) => {
 
     useEffect(() => {
         const currentFullText = texts[currentTextIndex]
+        const isFinishedTyping = !isDeleting && displayText.length === currentFullText.length
+        
+        const timeoutDuration = isFinishedTyping ? pause : (isDeleting ? speed / 2 : speed)
 
-        const timeout = setTimeout(() => {
+        const timer = setTimeout(() => {
             if (!isDeleting) {
-                setDisplayText(currentFullText.slice(0, displayText.length + 1))
-                if (displayText.length === currentFullText.length) {
-                    setTimeout(() => setIsDeleting(true), pause)
+                if (displayText.length < currentFullText.length) {
+                    setDisplayText(currentFullText.slice(0, displayText.length + 1))
+                } else {
+                    setIsDeleting(true)
                 }
             } else {
-                setDisplayText(currentFullText.slice(0, displayText.length - 1))
-                if (displayText.length === 0) {
+                if (displayText.length > 0) {
+                    setDisplayText(currentFullText.slice(0, displayText.length - 1))
+                } else {
                     setIsDeleting(false)
                     setCurrentTextIndex((prev) => (prev + 1) % texts.length)
                 }
             }
-        }, isDeleting ? speed / 2 : speed)
+        }, timeoutDuration)
 
-        return () => clearTimeout(timeout)
+        return () => clearTimeout(timer)
     }, [displayText, isDeleting, currentTextIndex, texts, speed, pause])
 
     return (
@@ -76,6 +81,13 @@ const CountUp = ({ target, duration = 2000, suffix = '' }) => {
     return <span>{count}{suffix}</span>
 }
 
+const typingPhrases = [
+    'Ace your next interview',
+    'Build ATS-perfect resumes',
+    'Discover dream job matches',
+    'Close every skill gap'
+]
+
 const Landing = () => {
     const navigate = useNavigate()
     const { user, handleLogout } = useAuth()
@@ -103,13 +115,6 @@ const Landing = () => {
             transition: { duration: 6, repeat: Infinity, ease: "easeInOut" }
         }
     }
-
-    const typingPhrases = [
-        'Ace your next interview',
-        'Build ATS-perfect resumes',
-        'Discover dream job matches',
-        'Close every skill gap'
-    ]
 
     return (
         <main className='landing-v3'>
