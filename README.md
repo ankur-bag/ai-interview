@@ -16,7 +16,7 @@ IntervUe is a modern, full-stack application designed to help job seekers prepar
 ##  Tech Stack
 
 ### Frontend
--   **Framework**: React (Vite)
+-   **Framework**: NextJs
 -   **Styling**: SCSS, Framer Motion (Animations)
 -   **Icons**: Lucide React
 -   **Navigation**: React Router
